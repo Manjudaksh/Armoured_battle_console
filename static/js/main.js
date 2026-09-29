@@ -1,0 +1,1 @@
+console.log("Armoured Battle Console loaded.");
