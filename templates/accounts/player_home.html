@@ -1,0 +1,472 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+
+    <meta charset="UTF-8">
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
+
+    <title>Armoured Battle Console</title>
+
+    <style>
+
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            min-height: 100vh;
+
+            background: #0b0f14;
+            color: #e6edf3;
+
+            font-family: Arial, sans-serif;
+        }
+
+        .topbar {
+            height: 70px;
+
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+
+            padding: 0 35px;
+
+            background: #111820;
+
+            border-bottom: 1px solid #26313c;
+        }
+
+        .brand {
+            font-size: 20px;
+            font-weight: bold;
+
+            letter-spacing: 1px;
+        }
+
+        .user-area {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+        }
+
+        .username {
+            color: #58a6ff;
+        }
+
+        .logout {
+            color: #ff7b72;
+            text-decoration: none;
+        }
+
+        .container {
+            max-width: 1250px;
+
+            margin: 0 auto;
+
+            padding: 40px 25px;
+        }
+
+        .welcome {
+            margin-bottom: 30px;
+        }
+
+        .welcome h1 {
+            margin-bottom: 8px;
+        }
+
+        .welcome p {
+            color: #8b949e;
+        }
+
+        .force-grid {
+            display: grid;
+
+            grid-template-columns:
+                repeat(auto-fit, minmax(300px, 1fr));
+
+            gap: 20px;
+        }
+
+        .force-card {
+            background: #111820;
+
+            border: 1px solid #26313c;
+
+            border-radius: 10px;
+
+            padding: 25px;
+        }
+
+        .country {
+            color: #58a6ff;
+
+            font-size: 13px;
+
+            text-transform: uppercase;
+
+            letter-spacing: 1px;
+        }
+
+        .force-name {
+            font-size: 23px;
+
+            margin: 8px 0 15px;
+        }
+
+        .force-code {
+            color: #8b949e;
+
+            font-family: monospace;
+
+            margin-bottom: 20px;
+        }
+
+        .button {
+            display: inline-block;
+
+            padding: 11px 18px;
+
+            background: #1f6feb;
+
+            color: white;
+
+            text-decoration: none;
+
+            border-radius: 6px;
+        }
+
+        .button.secondary {
+            background: #26313c;
+        }
+
+        .section {
+            margin-top: 35px;
+        }
+
+        .section-title {
+            margin-bottom: 15px;
+        }
+
+        .info {
+            color: #8b949e;
+        }
+
+
+        /* =========================
+           BATTLE SECTION
+           ========================= */
+
+        .battle-list {
+            display: grid;
+
+            gap: 15px;
+        }
+
+        .battle-card {
+            display: flex;
+
+            align-items: center;
+
+            justify-content: space-between;
+
+            gap: 20px;
+
+            background: #111820;
+
+            border: 1px solid #26313c;
+
+            border-radius: 10px;
+
+            padding: 22px 25px;
+        }
+
+        .battle-details {
+            flex: 1;
+        }
+
+        .battle-name {
+            font-size: 21px;
+
+            font-weight: bold;
+
+            margin-bottom: 8px;
+        }
+
+        .battle-exercise {
+            color: #58a6ff;
+
+            font-size: 14px;
+
+            margin-bottom: 6px;
+        }
+
+        .battle-description {
+            color: #8b949e;
+
+            font-size: 14px;
+
+            margin-bottom: 10px;
+        }
+
+        .battle-status {
+            display: inline-block;
+
+            padding: 5px 10px;
+
+            background: #26313c;
+
+            color: #c9d1d9;
+
+            border-radius: 5px;
+
+            font-size: 12px;
+
+            text-transform: uppercase;
+
+            letter-spacing: 0.5px;
+        }
+
+        .battle-action {
+            flex-shrink: 0;
+        }
+
+        .empty-battles {
+            background: #111820;
+
+            border: 1px solid #26313c;
+
+            border-radius: 10px;
+
+            padding: 25px;
+
+            color: #8b949e;
+        }
+
+        .message {
+            background: #16351f;
+
+            border: 1px solid #245c35;
+
+            border-radius: 6px;
+
+            padding: 12px 15px;
+
+            margin-bottom: 20px;
+
+            color: #b7f5c8;
+        }
+
+    </style>
+
+</head>
+
+
+<body>
+
+
+<div class="topbar">
+
+    <div class="brand">
+        ARMOUR BATTLE CONSOLE
+    </div>
+
+    <div class="user-area">
+
+        <span class="username">
+            {{ request.user.username }}
+        </span>
+
+        <a
+            class="logout"
+            href="{% url 'player_logout' %}"
+        >
+            Logout
+        </a>
+
+    </div>
+
+</div>
+
+
+<div class="container">
+
+
+    {% if messages %}
+
+        {% for message in messages %}
+
+            <div class="message">
+                {{ message }}
+            </div>
+
+        {% endfor %}
+
+    {% endif %}
+
+
+    <div class="welcome">
+
+        <h1>
+            Force Player Console
+        </h1>
+
+        <p>
+            Select an assigned force and configure it for an available battle.
+        </p>
+
+    </div>
+
+
+    <!-- =========================
+         ASSIGNED FORCES
+         ========================= -->
+
+    <div class="section">
+
+        <h2 class="section-title">
+            Assigned Forces
+        </h2>
+
+
+        <div class="force-grid">
+
+            {% for assignment in assignments %}
+
+                <div class="force-card">
+
+                    <div class="country">
+                        {{ assignment.force.country.name }}
+                    </div>
+
+
+                    <div class="force-name">
+                        {{ assignment.force.name }}
+                    </div>
+
+
+                    <div class="force-code">
+                        {{ assignment.force.code }}
+                    </div>
+
+                    <div class="info">
+                        This force can be used only in battles
+                        assigned to this player.
+                    </div>
+
+                </div>
+
+            {% endfor %}
+
+        </div>
+
+    </div>
+
+
+    <!-- =========================
+         AVAILABLE BATTLES
+         ========================= -->
+
+    <div class="section">
+
+        <h2 class="section-title">
+            Available Battles
+        </h2>
+
+
+        {% if battles %}
+
+            <div class="battle-list">
+
+                {% for battle in battles %}
+
+                    <div class="battle-card">
+
+                        <div class="battle-details">
+
+                            <div class="battle-name">
+                                {{ battle.name }}
+                            </div>
+
+
+                            <div class="battle-exercise">
+                                Exercise:
+                                {{ battle.exercise.name }}
+                            </div>
+
+
+                            {% if battle.description %}
+
+                                <div class="battle-description">
+                                    {{ battle.description }}
+                                </div>
+
+                            {% endif %}
+
+
+                            <span class="battle-status">
+                                {{ battle.get_status_display }}
+                            </span>
+
+                        </div>
+
+
+                        <div class="battle-action">
+
+                            <a
+                                class="button"
+                                href="{% url 'force_player_orbat' battle.id %}"
+                            >
+                                CONFIGURE ORBAT
+                            </a>
+
+                        </div>
+
+                    </div>
+
+                {% endfor %}
+
+            </div>
+
+        {% else %}
+
+            <div class="empty-battles">
+
+                No battles are currently available
+                for ORBAT configuration.
+
+            </div>
+
+        {% endif %}
+
+    </div>
+
+
+    <!-- =========================
+         SYSTEM STATUS
+         ========================= -->
+
+    <div class="section">
+
+        <h2>
+            System Status
+        </h2>
+
+        <p class="info">
+            Master inventory is controlled by the administrator.
+            Battle selections are limited to your assigned force.
+        </p>
+
+    </div>
+
+
+</div>
+
+</body>
+
+</html>

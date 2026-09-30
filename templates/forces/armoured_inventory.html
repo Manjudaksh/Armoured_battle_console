@@ -1,0 +1,868 @@
+{% load static %}
+
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+
+    <meta charset="UTF-8">
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
+
+    <title>Armoured Master Inventory</title>
+
+    <style>
+
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            font-family: Arial, sans-serif;
+            background: #111;
+            color: #eee;
+        }
+
+        .header {
+            background: #1f6f8b;
+            padding: 20px 30px;
+        }
+
+        .header h1 {
+            margin: 0;
+            font-size: 26px;
+        }
+
+        .header p {
+            margin: 7px 0 0;
+            color: #d7edf5;
+        }
+
+        .container {
+            max-width: 1500px;
+            margin: auto;
+            padding: 25px;
+        }
+
+        /* FILTER AREA */
+
+        .filters {
+            background: #1b1b1b;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 25px;
+            border: 1px solid #333;
+        }
+
+        .filters form {
+            display: flex;
+            gap: 15px;
+            align-items: end;
+            flex-wrap: wrap;
+        }
+
+        .field {
+            display: flex;
+            flex-direction: column;
+            gap: 7px;
+        }
+
+        label {
+            font-size: 13px;
+            color: #aaa;
+        }
+
+        select {
+            min-width: 230px;
+            padding: 10px;
+            border-radius: 5px;
+            border: 1px solid #555;
+            background: #292929;
+            color: white;
+        }
+
+        button {
+            padding: 10px 18px;
+            border-radius: 5px;
+            border: none;
+            background: #287b9a;
+            color: white;
+            cursor: pointer;
+            font-weight: bold;
+        }
+
+        button:hover {
+            background: #3498b9;
+        }
+
+        /* FORCE HEADER */
+
+        .force-title {
+            margin-bottom: 20px;
+        }
+
+        .force-title h2 {
+            margin: 0 0 5px;
+        }
+
+        .force-title p {
+            margin: 0;
+            color: #aaa;
+        }
+
+        /* PLATFORM GRID */
+
+        .inventory-grid {
+            display: grid;
+            grid-template-columns:
+                repeat(auto-fit, minmax(360px, 1fr));
+            gap: 18px;
+        }
+
+        /* PLATFORM CARD */
+
+        .platform-card {
+            background: #1c1c1c;
+            border: 1px solid #333;
+            border-radius: 8px;
+            overflow: hidden;
+        }
+
+        .platform-header {
+            background: #252525;
+            padding: 18px;
+        }
+
+        .platform-header h3 {
+            margin: 0 0 5px;
+            font-size: 20px;
+        }
+
+        .platform-type {
+            color: #aaa;
+            font-size: 13px;
+            margin-top: 3px;
+        }
+
+        .quantity {
+            font-size: 30px;
+            font-weight: bold;
+            color: #63c174;
+            margin-top: 12px;
+        }
+
+        /* CARD SECTIONS */
+
+        .section {
+            padding: 15px 18px;
+            border-top: 1px solid #333;
+        }
+
+        .section-title {
+            color: #70b7d1;
+            font-weight: bold;
+            margin-bottom: 10px;
+            font-size: 14px;
+            text-transform: uppercase;
+        }
+
+        .row {
+            display: flex;
+            justify-content: space-between;
+            gap: 20px;
+            padding: 5px 0;
+            font-size: 13px;
+        }
+
+        .row span:first-child {
+            color: #999;
+        }
+
+        .row span:last-child {
+            text-align: right;
+        }
+
+        /* EMPTY STATE */
+
+        .empty {
+            background: #1b1b1b;
+            padding: 45px;
+            text-align: center;
+            border-radius: 8px;
+            color: #aaa;
+            border: 1px solid #333;
+        }
+
+        /* SOURCE */
+
+        .source {
+            font-size: 12px;
+            color: #888;
+            line-height: 1.6;
+        }
+
+        .source a {
+            color: #70b7d1;
+            text-decoration: none;
+        }
+
+        .source a:hover {
+            text-decoration: underline;
+        }
+
+    </style>
+
+</head>
+
+
+<body>
+
+
+<!-- ========================================================= -->
+<!-- HEADER -->
+<!-- ========================================================= -->
+
+<div class="header">
+
+    <h1>
+        Armoured Master Inventory
+    </h1>
+
+    <p>
+        Pre-fed armoured platform inventory and technical data
+    </p>
+
+</div>
+
+
+<div class="container">
+
+
+    <!-- ===================================================== -->
+    <!-- FILTERS -->
+    <!-- ===================================================== -->
+
+    <div class="filters">
+
+        <form method="get">
+
+
+            <!-- COUNTRY -->
+
+            <div class="field">
+
+                <label for="country">
+                    Country
+                </label>
+
+                <select
+                    id="country"
+                    name="country"
+                >
+
+                    <option value="">
+                        Select country
+                    </option>
+
+
+                    {% for country in countries %}
+
+                        <option
+                            value="{{ country.id }}"
+                            {% if selected_country and selected_country.id == country.id %}
+                                selected
+                            {% endif %}
+                        >
+
+                            {{ country.name }}
+
+                        </option>
+
+                    {% endfor %}
+
+                </select>
+
+            </div>
+
+
+            <!-- FORCE -->
+
+            <div class="field">
+
+                <label for="force">
+                    Armoured Force
+                </label>
+
+                <select
+                    id="force"
+                    name="force"
+                >
+
+                    <option value="">
+                        Select force
+                    </option>
+
+
+                    {% for force in forces %}
+
+                        <option
+                            value="{{ force.id }}"
+                            {% if selected_force and selected_force.id == force.id %}
+                                selected
+                            {% endif %}
+                        >
+
+                            {{ force.name }}
+
+                        </option>
+
+                    {% endfor %}
+
+                </select>
+
+            </div>
+
+
+            <!-- BUTTON -->
+
+            <button type="submit">
+                View Inventory
+            </button>
+
+
+        </form>
+
+    </div>
+
+
+    <!-- ===================================================== -->
+    <!-- SELECTED FORCE -->
+    <!-- ===================================================== -->
+
+    {% if selected_force %}
+
+
+        <div class="force-title">
+
+            <h2>
+                {{ selected_force.name }}
+            </h2>
+
+            <p>
+                {{ selected_force.country.name }}
+            </p>
+
+        </div>
+
+
+        {% if inventory %}
+
+
+            <!-- ================================================= -->
+            <!-- PLATFORM CARDS -->
+            <!-- ================================================= -->
+
+            <div class="inventory-grid">
+
+
+                {% for item in inventory %}
+
+
+                    <div class="platform-card">
+
+
+                        <!-- ===================================== -->
+                        <!-- PLATFORM HEADER -->
+                        <!-- ===================================== -->
+
+                        <div class="platform-header">
+
+                            <h3>
+                                {{ item.platform.name }}
+                            </h3>
+
+                            <div class="platform-type">
+
+                                {{ item.platform.designation }}
+
+                            </div>
+
+                            <div class="platform-type">
+
+                                {{ item.platform.get_platform_type_display }}
+
+                            </div>
+
+
+                            <div class="quantity">
+
+                                {{ item.authorized_quantity }}
+
+                            </div>
+
+                            <div class="platform-type">
+
+                                Authorized inventory
+
+                            </div>
+
+                        </div>
+
+
+                        <!-- ===================================== -->
+                        <!-- BASIC INFORMATION -->
+                        <!-- ===================================== -->
+
+                        <div class="section">
+
+                            <div class="section-title">
+                                Basic
+                            </div>
+
+
+                            <div class="row">
+
+                                <span>
+                                    Manufacturer
+                                </span>
+
+                                <span>
+                                    {{ item.platform.manufacturer|default:"—" }}
+                                </span>
+
+                            </div>
+
+
+                            <div class="row">
+
+                                <span>
+                                    Country of origin
+                                </span>
+
+                                <span>
+                                    {{ item.platform.country_of_origin|default:"—" }}
+                                </span>
+
+                            </div>
+
+                        </div>
+
+
+                        <!-- ===================================== -->
+                        <!-- PHYSICAL -->
+                        <!-- ===================================== -->
+
+                        <div class="section">
+
+                            <div class="section-title">
+                                Physical
+                            </div>
+
+
+                            <div class="row">
+
+                                <span>
+                                    Crew
+                                </span>
+
+                                <span>
+                                    {{ item.platform.crew_size|default:"—" }}
+                                </span>
+
+                            </div>
+
+
+                            <div class="row">
+
+                                <span>
+                                    Passengers
+                                </span>
+
+                                <span>
+                                    {{ item.platform.passenger_capacity|default:"—" }}
+                                </span>
+
+                            </div>
+
+
+                            <div class="row">
+
+                                <span>
+                                    Length
+                                </span>
+
+                                <span>
+
+                                    {% if item.platform.length_m %}
+                                        {{ item.platform.length_m }} m
+                                    {% else %}
+                                        —
+                                    {% endif %}
+
+                                </span>
+
+                            </div>
+
+
+                            <div class="row">
+
+                                <span>
+                                    Width
+                                </span>
+
+                                <span>
+
+                                    {% if item.platform.width_m %}
+                                        {{ item.platform.width_m }} m
+                                    {% else %}
+                                        —
+                                    {% endif %}
+
+                                </span>
+
+                            </div>
+
+
+                            <div class="row">
+
+                                <span>
+                                    Height
+                                </span>
+
+                                <span>
+
+                                    {% if item.platform.height_m %}
+                                        {{ item.platform.height_m }} m
+                                    {% else %}
+                                        —
+                                    {% endif %}
+
+                                </span>
+
+                            </div>
+
+
+                            <div class="row">
+
+                                <span>
+                                    Combat weight
+                                </span>
+
+                                <span>
+
+                                    {% if item.platform.combat_weight_tonnes %}
+                                        {{ item.platform.combat_weight_tonnes }} t
+                                    {% else %}
+                                        —
+                                    {% endif %}
+
+                                </span>
+
+                            </div>
+
+                        </div>
+
+
+                        <!-- ===================================== -->
+                        <!-- MOBILITY -->
+                        <!-- ===================================== -->
+
+                        <div class="section">
+
+                            <div class="section-title">
+                                Mobility
+                            </div>
+
+
+                            <div class="row">
+
+                                <span>
+                                    Mobility class
+                                </span>
+
+                                <span>
+                                    {{ item.platform.mobility_class|default:"—" }}
+                                </span>
+
+                            </div>
+
+
+                            <div class="row">
+
+                                <span>
+                                    Maximum speed
+                                </span>
+
+                                <span>
+
+                                    {% if item.platform.max_speed_kmh %}
+                                        {{ item.platform.max_speed_kmh }} km/h
+                                    {% else %}
+                                        —
+                                    {% endif %}
+
+                                </span>
+
+                            </div>
+
+
+                            <div class="row">
+
+                                <span>
+                                    Operational range
+                                </span>
+
+                                <span>
+
+                                    {% if item.platform.operational_range_km %}
+                                        {{ item.platform.operational_range_km }} km
+                                    {% else %}
+                                        —
+                                    {% endif %}
+
+                                </span>
+
+                            </div>
+
+
+                            <div class="row">
+
+                                <span>
+                                    Amphibious
+                                </span>
+
+                                <span>
+
+                                    {% if item.platform.amphibious %}
+                                        Yes
+                                    {% else %}
+                                        No
+                                    {% endif %}
+
+                                </span>
+
+                            </div>
+
+
+                            <div class="row">
+
+                                <span>
+                                    Night capable
+                                </span>
+
+                                <span>
+
+                                    {% if item.platform.night_capable %}
+                                        Yes
+                                    {% else %}
+                                        No
+                                    {% endif %}
+
+                                </span>
+
+                            </div>
+
+                        </div>
+
+
+                        <!-- ===================================== -->
+                        <!-- SENSORS -->
+                        <!-- ===================================== -->
+
+                        <div class="section">
+
+                            <div class="section-title">
+                                Sensors
+                            </div>
+
+
+                            {% for ps in item.platform.platform_sensors.all %}
+
+
+                                <div class="row">
+
+                                    <span>
+                                        {{ ps.sensor.name }}
+                                    </span>
+
+                                    <span>
+                                        {% if ps.sensor.night_capable %}
+                                            Night capable
+                                        {% else %}
+                                            Day
+                                        {% endif %}
+                                    </span>
+
+                                </div>
+
+
+                            {% empty %}
+
+
+                                <div class="row">
+
+                                    <span>
+                                        No sensors recorded
+                                    </span>
+
+                                </div>
+
+
+                            {% endfor %}
+
+                        </div>
+
+
+                        <!-- ===================================== -->
+                        <!-- WEAPONS -->
+                        <!-- ===================================== -->
+
+                        <div class="section">
+
+                            <div class="section-title">
+                                Weapons
+                            </div>
+
+
+                            {% for pw in item.platform.platform_weapons.all %}
+
+
+                                <div class="row">
+
+                                    <span>
+                                        {{ pw.weapon.name }}
+                                    </span>
+
+
+                                    <span>
+
+                                        {% if pw.weapon.caliber_mm %}
+
+                                            {{ pw.weapon.caliber_mm }} mm
+
+                                        {% else %}
+
+                                            —
+
+                                        {% endif %}
+
+                                    </span>
+
+                                </div>
+
+
+                            {% empty %}
+
+
+                                <div class="row">
+
+                                    <span>
+                                        No weapons recorded
+                                    </span>
+
+                                </div>
+
+
+                            {% endfor %}
+
+                        </div>
+
+
+                        <!-- ===================================== -->
+                        <!-- SOURCE -->
+                        <!-- ===================================== -->
+
+                        <div class="section">
+
+                            <div class="section-title">
+                                Source
+                            </div>
+
+
+                            {% if item.platform.source %}
+
+
+                                <div class="source">
+
+                                    {{ item.platform.source.name }}
+
+
+                                    {% if item.platform.source.url %}
+
+                                        <br>
+
+                                        <a
+                                            href="{{ item.platform.source.url }}"
+                                            target="_blank"
+                                            rel="noopener noreferrer"
+                                        >
+                                            Open source
+                                        </a>
+
+                                    {% endif %}
+
+                                </div>
+
+
+                            {% else %}
+
+
+                                <div class="source">
+
+                                    No source recorded
+
+                                </div>
+
+
+                            {% endif %}
+
+
+                        </div>
+
+
+                    </div>
+
+
+                {% endfor %}
+
+
+            </div>
+
+
+        {% else %}
+
+
+            <div class="empty">
+
+                No platform inventory found for this force.
+
+            </div>
+
+
+        {% endif %}
+
+
+    {% else %}
+
+
+        <div class="empty">
+
+            Select a country and armoured force to view
+            its inventory.
+
+        </div>
+
+
+    {% endif %}
+
+
+</div>
+
+
+</body>
+
+</html>

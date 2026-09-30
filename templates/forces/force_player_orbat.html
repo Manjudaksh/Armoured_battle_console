@@ -1,0 +1,304 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+
+    <title>Battle ORBAT Selection</title>
+
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            padding: 30px;
+            background: #0b0f14;
+            color: #e6edf3;
+            font-family: Arial, sans-serif;
+        }
+
+        .container {
+            max-width: 1300px;
+            margin: auto;
+        }
+
+        h1 {
+            margin-bottom: 5px;
+        }
+
+        .subtitle {
+            color: #8b949e;
+            margin-bottom: 25px;
+        }
+
+        .panel {
+            background: #111820;
+            border: 1px solid #26313c;
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+
+        select,
+        input[type="number"] {
+            background: #0b1117;
+            color: white;
+            border: 1px solid #34404d;
+            border-radius: 6px;
+            padding: 10px;
+        }
+
+        select {
+            min-width: 300px;
+        }
+
+        button {
+            background: #1f6feb;
+            color: white;
+            border: 0;
+            padding: 11px 20px;
+            border-radius: 6px;
+            cursor: pointer;
+        }
+
+        button:hover {
+            opacity: 0.9;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 15px;
+        }
+
+        th,
+        td {
+            padding: 12px;
+            border-bottom: 1px solid #26313c;
+            text-align: left;
+        }
+
+        th {
+            color: #8b949e;
+            font-size: 13px;
+            text-transform: uppercase;
+        }
+
+        .quantity {
+            width: 100px;
+        }
+
+        .limit {
+            color: #8b949e;
+            font-size: 13px;
+        }
+
+        .message {
+            padding: 12px;
+            border-radius: 6px;
+            margin-bottom: 10px;
+            background: #17212b;
+        }
+
+        .warning {
+            color: #f0c674;
+        }
+
+        .save-area {
+            text-align: right;
+            margin-top: 20px;
+        }
+    </style>
+</head>
+
+<body>
+
+<div class="container">
+
+    <h1>Battle ORBAT Selection</h1>
+
+    <div class="subtitle">
+        Select platforms from your authorized force inventory.
+    </div>
+
+    {% if messages %}
+        {% for message in messages %}
+            <div class="message">
+                {{ message }}
+            </div>
+        {% endfor %}
+    {% endif %}
+
+
+    <!-- FORCE SELECTION -->
+
+    <div class="panel">
+
+        <h2>Assigned Force</h2>
+
+        <form method="get">
+
+            <select name="force" required>
+
+                <option value="">
+                    -- Select Assigned Force --
+                </option>
+
+                {% for assignment in assignments %}
+
+                    <option
+                        value="{{ assignment.force.id }}"
+                        {% if selected_force and selected_force.id == assignment.force.id %}
+                            selected
+                        {% endif %}
+                    >
+                        {{ assignment.force.country.name }}
+                        -
+                        {{ assignment.force.name }}
+                    </option>
+
+                {% endfor %}
+
+            </select>
+
+            <button type="submit">
+                Load Inventory
+            </button>
+
+        </form>
+
+    </div>
+
+
+    {% if selected_force %}
+
+        <!-- INVENTORY -->
+
+        <div class="panel">
+
+            <h2>
+                {{ selected_force.country.name }}
+                -
+                {{ selected_force.name }}
+            </h2>
+
+            <p class="subtitle">
+                Battle ORBAT ID: {{ orbat.id }}
+            </p>
+
+
+            <form method="post">
+
+                {% csrf_token %}
+
+                <input
+                    type="hidden"
+                    name="force_id"
+                    value="{{ selected_force.id }}"
+                >
+
+
+                <table>
+
+                    <thead>
+
+                        <tr>
+                            <th>Platform</th>
+                            <th>Type</th>
+                            <th>Authorized</th>
+                            <th>Select Quantity</th>
+                        </tr>
+
+                    </thead>
+
+                    <tbody>
+
+                    {% for item in inventory %}
+
+                        <tr>
+
+                            <td>
+                                <strong>
+                                    {{ item.platform.name }}
+                                </strong>
+                            </td>
+
+                            <td>
+                                {{ item.platform.get_platform_type_display }}
+                            </td>
+
+                            <td>
+                                {{ item.authorized_quantity }}
+                            </td>
+
+                            <td>
+
+                                <input
+                                    class="quantity"
+                                    type="number"
+                                    name="quantity_{{ item.id }}"
+                                    value="0"
+                                    min="0"
+                                    max="{{ item.authorized_quantity }}"
+                                    step="1"
+                                >
+
+                                <div class="limit">
+                                    Max:
+                                    {{ item.authorized_quantity }}
+                                </div>
+
+                            </td>
+
+                        </tr>
+
+                    {% empty %}
+
+                        <tr>
+
+                            <td colspan="4">
+                                No platforms are currently available
+                                for this force.
+                            </td>
+
+                        </tr>
+
+                    {% endfor %}
+
+                    </tbody>
+
+                </table>
+
+
+                {% if inventory %}
+
+                    <div class="save-area">
+
+                        <button type="submit">
+                            Save Battle ORBAT
+                        </button>
+
+                    </div>
+
+                {% endif %}
+
+            </form>
+
+        </div>
+
+    {% else %}
+
+        <div class="panel warning">
+
+            Select your assigned force to load its
+            available armoured platforms.
+
+        </div>
+
+    {% endif %}
+
+</div>
+
+</body>
+</html>

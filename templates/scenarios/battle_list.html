@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Battle Management</title>
+
+    <style>
+        body {
+            margin: 0;
+            padding: 30px;
+            background: #0b0f14;
+            color: #e5e7eb;
+            font-family: Arial, sans-serif;
+        }
+
+        .container {
+            max-width: 1100px;
+            margin: auto;
+        }
+
+        h1 {
+            margin-bottom: 30px;
+        }
+
+        .panel {
+            background: #151b23;
+            border: 1px solid #2b3440;
+            border-radius: 10px;
+            padding: 24px;
+            margin-bottom: 25px;
+        }
+
+        label {
+            display: block;
+            margin-top: 15px;
+            margin-bottom: 6px;
+        }
+
+        input,
+        textarea,
+        select {
+            width: 100%;
+            box-sizing: border-box;
+            padding: 10px;
+            background: #0d131a;
+            color: white;
+            border: 1px solid #374151;
+            border-radius: 6px;
+        }
+
+        textarea {
+            min-height: 90px;
+        }
+
+        button {
+            margin-top: 20px;
+            padding: 11px 20px;
+            background: #2563eb;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+        }
+
+        .battle {
+            border: 1px solid #303a46;
+            border-radius: 8px;
+            padding: 18px;
+            margin-top: 12px;
+            background: #10161e;
+        }
+
+        .battle-name {
+            font-size: 20px;
+            font-weight: bold;
+        }
+
+        .status {
+            display: inline-block;
+            margin-top: 8px;
+            padding: 5px 9px;
+            border-radius: 5px;
+            background: #374151;
+        }
+
+        .orbat-link {
+            display: inline-block;
+            margin-top: 12px;
+            color: #60a5fa;
+        }
+
+        .message {
+            padding: 12px;
+            background: #16351f;
+            border-radius: 6px;
+            margin-bottom: 15px;
+        }
+    </style>
+</head>
+
+<body>
+
+<div class="container">
+
+    <h1>Battle Management</h1>
+
+    {% if messages %}
+        {% for message in messages %}
+            <div class="message">
+                {{ message }}
+            </div>
+        {% endfor %}
+    {% endif %}
+
+    <div class="panel">
+
+        <h2>Create Battle</h2>
+
+        <form method="post" action="{% url 'create_battle' %}">
+            {% csrf_token %}
+
+            <label for="exercise_id">
+                Exercise
+            </label>
+
+            <select name="exercise_id" id="exercise_id" required>
+                <option value="">
+                    -- Select Exercise --
+                </option>
+
+                {% for exercise in exercises %}
+                    <option value="{{ exercise.id }}">
+                        {{ exercise.name }}
+                    </option>
+                {% endfor %}
+            </select>
+
+            <label for="name">
+                Battle Name
+            </label>
+
+            <input
+                type="text"
+                id="name"
+                name="name"
+                placeholder="Example: Battle Alpha"
+                required
+            >
+
+            <label for="description">
+                Description
+            </label>
+
+            <textarea
+                id="description"
+                name="description"
+                placeholder="Battle description"
+            ></textarea>
+
+            <button type="submit">
+                CREATE BATTLE
+            </button>
+        </form>
+
+    </div>
+
+
+    <div class="panel">
+
+        <h2>Existing Battles</h2>
+
+        {% if battles %}
+
+            {% for battle in battles %}
+
+                <div class="battle">
+
+                    <div class="battle-name">
+                        {{ battle.name }}
+                    </div>
+
+                    <div>
+                        Exercise:
+                        {{ battle.exercise.name }}
+                    </div>
+
+                    <div class="status">
+                        {{ battle.get_status_display }}
+                    </div>
+
+                    <br>
+
+                    <a
+                        class="orbat-link"
+                        href="{% url 'force_player_orbat' battle.id %}"
+                    >
+                        Configure Battle ORBAT
+                    </a>
+
+                </div>
+
+            {% endfor %}
+
+        {% else %}
+
+            <p>No battles have been created yet.</p>
+
+        {% endif %}
+
+    </div>
+
+</div>
+
+</body>
+</html>
