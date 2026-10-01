@@ -2,6 +2,7 @@ from django.contrib import admin
 
 from .models import Battle, BattleOrbat, Exercise
 
+from .models import BattleForce
 
 @admin.register(Exercise)
 class ExerciseAdmin(admin.ModelAdmin):
@@ -62,4 +63,22 @@ class BattleOrbatAdmin(admin.ModelAdmin):
     readonly_fields = (
         "created_at",
         "updated_at",
+    )
+
+@admin.register(BattleForce)
+class BattleForceAdmin(admin.ModelAdmin):
+    list_display = (
+        "battle",
+        "force",
+        "side",
+        "is_active",
+        "created_at",
+    )
+    list_filter = (
+        "side",
+        "is_active",
+    )
+    search_fields = (
+        "battle__name",
+        "force__name",
     )
