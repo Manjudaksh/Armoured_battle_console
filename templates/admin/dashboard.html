@@ -1,15 +1,23 @@
 {% extends "base.html" %}
+
 {% load static %}
 
 {% block title %}
 Armoured Battle Console
 {% endblock %}
 
+
 {% block extra_css %}
-<link rel="stylesheet" href="{% static 'cesium/Widgets/widgets.css' %}">
+
+<link
+    rel="stylesheet"
+    href="{% static 'cesium/Widgets/widgets.css' %}"
+>
 
 <style>
-    html, body {
+
+    html,
+    body {
         width: 100%;
         height: 100%;
         margin: 0;
@@ -17,62 +25,2917 @@ Armoured Battle Console
         overflow: hidden;
     }
 
+
     #cesiumContainer {
         width: 100%;
         height: 100vh;
     }
-</style>
-{% endblock %}
 
-{% block content %}
-<div id="cesiumContainer"></div>
-{% endblock %}
 
-{% block extra_js %}
-<script src="{% static 'cesium/Cesium.js' %}"></script>
+    /* ============================================================
+       MAIN TOOLBAR
+       ============================================================ */
 
-<script>
-    Cesium.Ion.defaultAccessToken = "{{ cesium_ion_token }}";
+    #deploymentZoneToolbar {
 
-    async function initCesium() {
-        try {
-            const container = document.getElementById("cesiumContainer");
-            if (!container) {
-                throw new Error("cesiumContainer was not found in the DOM.");
-            }
+        position: absolute;
 
-            const terrainProvider = await Cesium.createWorldTerrainAsync();
+        top: 20px;
+        left: 20px;
 
-            const viewer = new Cesium.Viewer(container, {
-    animation: false,
-    timeline: false,
-    baseLayerPicker: false,   // avoids conflicting imagery layers
-    geocoder: true,
-    homeButton: true,
-    sceneModePicker: false,   // 3D tiles only work in 3D mode
-    globe: false              // Google tiles include their own ground
-});
+        z-index: 1000;
 
-// Realistic 3D buildings (replaces OSM Buildings)
-const tileset = await Cesium.createGooglePhotorealistic3DTileset();
-viewer.scene.primitives.add(tileset);
+        padding: 14px;
 
-viewer.camera.flyTo({
-    destination: Cesium.Cartesian3.fromDegrees(-74.0060, 40.7128, 600),
-    orientation: {
-        heading: Cesium.Math.toRadians(20),
-        pitch: Cesium.Math.toRadians(-30),  // tilt matters a lot
-        roll: 0
-    },
-    duration: 3
-});
+        min-width: 390px;
 
-            console.log("Cesium initialized successfully.");
-        } catch (error) {
-            console.error("Cesium initialization failed:", error);
-        }
+        max-width: 470px;
+
+        background: rgba(20, 25, 30, 0.94);
+
+        border: 1px solid rgba(255, 255, 255, 0.20);
+
+        border-radius: 8px;
+
+        color: white;
+
+        font-family: Arial, sans-serif;
+
+        box-shadow:
+            0 4px 18px rgba(0, 0, 0, 0.35);
     }
 
-    initCesium();
+
+    .zone-toolbar-title {
+
+        font-size: 17px;
+
+        font-weight: bold;
+
+        margin-bottom: 10px;
+    }
+
+
+    .zone-toolbar-row {
+
+        display: flex;
+
+        flex-wrap: wrap;
+
+        gap: 6px;
+    }
+
+
+    .zone-btn {
+
+        border: none;
+
+        border-radius: 5px;
+
+        padding: 8px 10px;
+
+        cursor: pointer;
+
+        color: white;
+
+        font-weight: 600;
+
+        transition:
+            filter 0.15s ease,
+            opacity 0.15s ease;
+    }
+
+
+    .zone-btn:hover {
+
+        filter: brightness(1.1);
+    }
+
+
+    .zone-btn:disabled {
+
+        opacity: 0.45;
+
+        cursor: not-allowed;
+
+        filter: none;
+    }
+
+
+    .zone-btn.blue {
+
+        background: #2563eb;
+    }
+
+
+    .zone-btn.red {
+
+        background: #dc2626;
+    }
+
+
+    .zone-btn.finish {
+
+        background: #16a34a;
+    }
+
+
+    .zone-btn.clear {
+
+        background: #555;
+    }
+
+
+    .zone-btn.run {
+
+        background: #15803d;
+    }
+
+
+    .zone-btn.stop {
+
+        background: #b91c1c;
+    }
+
+
+    #zoneStatus {
+
+        margin-top: 10px;
+
+        font-size: 13px;
+
+        line-height: 1.4;
+
+        color: #d1d5db;
+    }
+
+
+    /* ============================================================
+       SIMULATION STATUS
+       ============================================================ */
+
+    #simulationStatusPanel {
+
+        margin-top: 12px;
+
+        padding-top: 10px;
+
+        border-top:
+            1px solid rgba(255, 255, 255, 0.15);
+
+        font-size: 13px;
+
+        line-height: 1.6;
+
+        color: #e5e7eb;
+    }
+
+
+    .simulation-status-row {
+
+        display: flex;
+
+        justify-content: space-between;
+
+        gap: 20px;
+    }
+
+
+    .simulation-status-label {
+
+        color: #9ca3af;
+    }
+
+
+    .simulation-status-value {
+
+        font-weight: 600;
+
+        color: #ffffff;
+    }
+
+
+    #simulationLiveStatus.running {
+
+        color: #4ade80;
+    }
+
+
+    #simulationLiveStatus.stopped {
+
+        color: #f87171;
+    }
+
+
+    /* ============================================================
+       UNIT INFO PANEL
+       ============================================================ */
+
+    #unitInfoPanel {
+
+        position: absolute;
+
+        top: 20px;
+
+        right: 20px;
+
+        z-index: 1000;
+
+        width: 300px;
+
+        max-height: 420px;
+
+        overflow-y: auto;
+
+        padding: 14px;
+
+        background: rgba(20, 25, 30, 0.94);
+
+        border:
+            1px solid rgba(255, 255, 255, 0.20);
+
+        border-radius: 8px;
+
+        color: white;
+
+        font-family: Arial, sans-serif;
+
+        box-shadow:
+            0 4px 18px rgba(0, 0, 0, 0.35);
+
+        display: none;
+    }
+
+
+    #unitInfoPanel.visible {
+
+        display: block;
+    }
+
+
+    #unitInfoTitle {
+
+        font-size: 16px;
+
+        font-weight: bold;
+
+        margin-bottom: 10px;
+    }
+
+
+    .unit-info-table {
+
+        width: 100%;
+
+        border-collapse: collapse;
+
+        font-size: 13px;
+    }
+
+
+    .unit-info-table th {
+
+        text-align: left;
+
+        padding: 4px 6px 4px 0;
+
+        color: #9ca3af;
+
+        font-weight: normal;
+    }
+
+
+    .unit-info-table td {
+
+        padding: 4px 0;
+
+        color: #ffffff;
+
+    }
+
+
+    .side-blue {
+
+        color: #22d3ee !important;
+
+        font-weight: bold;
+    }
+
+
+    .side-red {
+
+        color: #f87171 !important;
+
+        font-weight: bold;
+    }
+
+
+    /* ============================================================
+       MAP HINT
+       ============================================================ */
+
+    #mapHint {
+
+        position: absolute;
+
+        bottom: 18px;
+
+        left: 50%;
+
+        transform: translateX(-50%);
+
+        z-index: 900;
+
+        padding: 7px 12px;
+
+        border-radius: 5px;
+
+        background:
+            rgba(20, 25, 30, 0.82);
+
+        color: #d1d5db;
+
+        font-family: Arial, sans-serif;
+
+        font-size: 12px;
+
+        pointer-events: none;
+    }
+
+</style>
+
+{% endblock %}
+
+
+{% block content %}
+
+<!-- ============================================================
+     DEPLOYMENT + SIMULATION TOOLBAR
+     ============================================================ -->
+
+<div id="deploymentZoneToolbar">
+
+    <div class="zone-toolbar-title">
+        Armoured Battle Console
+    </div>
+
+
+    <div class="zone-toolbar-row">
+
+        <button
+            type="button"
+            id="drawBlueZoneBtn"
+            class="zone-btn blue"
+        >
+            Draw BLUE Zone
+        </button>
+
+
+        <button
+            type="button"
+            id="drawRedZoneBtn"
+            class="zone-btn red"
+        >
+            Draw RED Zone
+        </button>
+
+
+        <button
+            type="button"
+            id="finishZoneBtn"
+            class="zone-btn finish"
+            disabled
+        >
+            Finish Polygon
+        </button>
+
+
+        <button
+            type="button"
+            id="clearZoneBtn"
+            class="zone-btn clear"
+        >
+            Clear Current
+        </button>
+
+    </div>
+
+
+    <div
+        class="zone-toolbar-row"
+        style="margin-top: 7px;"
+    >
+
+        <button
+            type="button"
+            id="runSimulationBtn"
+            class="zone-btn run"
+        >
+            ▶ Run Simulation
+        </button>
+
+
+        <button
+            type="button"
+            id="stopSimulationBtn"
+            class="zone-btn stop"
+        >
+            ■ Stop
+        </button>
+
+    </div>
+
+
+    <div id="zoneStatus">
+
+        Select BLUE or RED, then click points on
+        the globe.
+
+    </div>
+
+
+    <!-- ========================================================
+         SIMULATION STATUS
+         ======================================================== -->
+
+    <div id="simulationStatusPanel">
+
+        <div class="simulation-status-row">
+
+            <span class="simulation-status-label">
+                Simulation
+            </span>
+
+            <span
+                id="simulationLiveStatus"
+                class="simulation-status-value stopped"
+            >
+                STOPPED
+            </span>
+
+        </div>
+
+
+        <div class="simulation-status-row">
+
+            <span class="simulation-status-label">
+                Tick
+            </span>
+
+            <span
+                id="simulationTick"
+                class="simulation-status-value"
+            >
+                0
+            </span>
+
+        </div>
+
+
+        <div class="simulation-status-row">
+
+            <span class="simulation-status-label">
+                Units Processed
+            </span>
+
+            <span
+                id="simulationUnitsProcessed"
+                class="simulation-status-value"
+            >
+                0
+            </span>
+
+        </div>
+
+
+        <div class="simulation-status-row">
+
+            <span class="simulation-status-label">
+                Completed Movements
+            </span>
+
+            <span
+                id="simulationMovementsCompleted"
+                class="simulation-status-value"
+            >
+                0
+            </span>
+
+        </div>
+
+    </div>
+
+</div>
+
+
+<!-- ============================================================
+     UNIT INFORMATION PANEL
+     ============================================================ -->
+
+<div id="unitInfoPanel">
+
+    <div id="unitInfoTitle">
+        Unit Information
+    </div>
+
+    <div id="unitInfoContent"></div>
+
+</div>
+
+
+<!-- ============================================================
+     CESIUM
+     ============================================================ -->
+
+<div id="cesiumContainer"></div>
+
+
+<div id="mapHint">
+
+    Click a unit to view its information.
+
+</div>
+
+{% endblock %}
+
+
+{% block extra_js %}
+
+<form style="display: none;">
+
+    {% csrf_token %}
+
+</form>
+
+
+<!-- ============================================================
+     CESIUM JAVASCRIPT
+     ============================================================ -->
+
+<script src="{% static 'cesium/Cesium.js' %}"></script>
+
+
+<script>
+
+    /* ============================================================
+       GLOBAL CESIUM VIEWER
+       ============================================================ */
+
+    window.armouredViewer = null;
+
+    window.armouredCesiumReady = false;
+
+
+    Cesium.Ion.defaultAccessToken =
+        "{{ cesium_ion_token }}";
+
+
+    /* ============================================================
+       CESIUM INITIALIZATION
+       ============================================================ */
+
+    async function initCesium() {
+
+        try {
+
+            const container =
+                document.getElementById(
+                    "cesiumContainer"
+                );
+
+
+            if (!container) {
+
+                throw new Error(
+                    "cesiumContainer was not found."
+                );
+
+            }
+
+
+            /*
+             * Create Cesium viewer.
+             */
+
+            window.armouredViewer =
+                new Cesium.Viewer(
+                    container,
+                    {
+
+                        animation: false,
+
+                        timeline: false,
+
+                        baseLayerPicker: false,
+
+                        geocoder: true,
+
+                        homeButton: true,
+
+                        sceneModePicker: false,
+
+                        globe: false
+
+                    }
+                );
+
+
+            const viewer =
+                window.armouredViewer;
+
+
+            /*
+             * Google Photorealistic 3D Tiles.
+             */
+
+            const tileset =
+                await
+                Cesium.createGooglePhotorealistic3DTileset();
+
+
+            viewer.scene.primitives.add(
+                tileset
+            );
+
+
+            /*
+             * Camera starts near the current
+             * battle deployment area.
+             */
+
+            viewer.camera.flyTo({
+
+                destination:
+                    Cesium.Cartesian3.fromDegrees(
+                        74.951,
+                        31.756,
+                        12000
+                    ),
+
+                orientation: {
+
+                    heading:
+                        Cesium.Math.toRadians(0),
+
+                    pitch:
+                        Cesium.Math.toRadians(-55),
+
+                    roll: 0
+
+                },
+
+                duration: 3
+
+            });
+
+
+            window.armouredCesiumReady =
+                true;
+
+
+            console.log(
+                "Cesium initialized successfully."
+            );
+
+
+            /*
+             * Start deployment-zone editor.
+             */
+
+            if (
+                typeof
+                window.initializeDeploymentZoneEditor
+                === "function"
+            ) {
+
+                window.initializeDeploymentZoneEditor();
+
+            }
+
+
+            /*
+             * Load battle units.
+             */
+
+            if (
+                typeof
+                window.loadBattleUnits
+                === "function"
+            ) {
+
+                await
+                window.loadBattleUnits();
+
+            }
+
+
+        } catch (error) {
+
+            console.error(
+                "Cesium initialization failed:",
+                error
+            );
+
+
+            const status =
+                document.getElementById(
+                    "zoneStatus"
+                );
+
+
+            if (status) {
+
+                status.textContent =
+                    "Cesium initialization failed. Check browser console.";
+
+            }
+
+        }
+
+    }
+
+
 </script>
+
+
+<script>
+
+    /* ============================================================
+       BATTLE
+       ============================================================ */
+
+    const battleId = 1;
+
+
+    /* ============================================================
+       DEPLOYMENT ZONE STATE
+       ============================================================ */
+
+    let activeZoneSide = null;
+
+    let drawingZone = false;
+
+    let currentZonePoints = [];
+
+    let currentZoneEntities = [];
+
+    let temporaryPolygonEntity = null;
+
+    let deploymentZoneHandler = null;
+
+
+    /* ============================================================
+       DOM ELEMENTS
+       ============================================================ */
+
+    const zoneStatus =
+        document.getElementById(
+            "zoneStatus"
+        );
+
+
+    const drawBlueZoneBtn =
+        document.getElementById(
+            "drawBlueZoneBtn"
+        );
+
+
+    const drawRedZoneBtn =
+        document.getElementById(
+            "drawRedZoneBtn"
+        );
+
+
+    const finishZoneBtn =
+        document.getElementById(
+            "finishZoneBtn"
+        );
+
+
+    const clearZoneBtn =
+        document.getElementById(
+            "clearZoneBtn"
+        );
+
+
+    /* ============================================================
+       STATUS
+       ============================================================ */
+
+    function setZoneStatus(message) {
+
+        zoneStatus.textContent =
+            message;
+
+    }
+
+
+    /* ============================================================
+       ZONE COLORS
+       ============================================================ */
+
+    function getZoneColor(side) {
+
+        if (side === "BLUE") {
+
+            return Cesium.Color.BLUE
+                .withAlpha(0.35);
+
+        }
+
+        return Cesium.Color.RED
+            .withAlpha(0.35);
+
+    }
+
+
+    function getZoneOutlineColor(side) {
+
+        if (side === "BLUE") {
+
+            return Cesium.Color.BLUE;
+
+        }
+
+        return Cesium.Color.RED;
+
+    }
+
+
+    /* ============================================================
+       START DRAWING
+       ============================================================ */
+
+    function startDrawingZone(side) {
+
+        const viewer =
+            window.armouredViewer;
+
+
+        if (!viewer) {
+
+            setZoneStatus(
+                "Cesium is still loading. Please wait."
+            );
+
+            return;
+
+        }
+
+
+        activeZoneSide = side;
+
+        drawingZone = true;
+
+        currentZonePoints = [];
+
+
+        clearCurrentZoneEntities();
+
+
+        finishZoneBtn.disabled = true;
+
+
+        setZoneStatus(
+            `Drawing ${side} deployment zone. ` +
+            `Click at least 3 points on the globe.`
+        );
+
+
+        console.log(
+            `Started drawing ${side} deployment zone.`
+        );
+
+    }
+
+
+    /* ============================================================
+       CLEAR TEMPORARY ZONE ENTITIES
+       ============================================================ */
+
+    function clearCurrentZoneEntities() {
+
+        const viewer =
+            window.armouredViewer;
+
+
+        if (!viewer) {
+
+            return;
+
+        }
+
+
+        for (
+            const entity
+            of currentZoneEntities
+        ) {
+
+            viewer.entities.remove(
+                entity
+            );
+
+        }
+
+
+        currentZoneEntities = [];
+
+
+        if (temporaryPolygonEntity) {
+
+            viewer.entities.remove(
+                temporaryPolygonEntity
+            );
+
+            temporaryPolygonEntity =
+                null;
+
+        }
+
+    }
+
+
+    /* ============================================================
+       ADD ZONE POINT
+       ============================================================ */
+
+    function addZonePoint(cartesian) {
+
+        const viewer =
+            window.armouredViewer;
+
+
+        if (!viewer) {
+
+            return;
+
+        }
+
+
+        if (!Cesium.defined(cartesian)) {
+
+            return;
+
+        }
+
+
+        const cartographic =
+            Cesium.Cartographic.fromCartesian(
+                cartesian
+            );
+
+
+        const longitude =
+            Cesium.Math.toDegrees(
+                cartographic.longitude
+            );
+
+
+        const latitude =
+            Cesium.Math.toDegrees(
+                cartographic.latitude
+            );
+
+
+        currentZonePoints.push([
+            longitude,
+            latitude
+        ]);
+
+
+        /*
+         * Visible point.
+         */
+
+        const pointEntity =
+            viewer.entities.add({
+
+                position:
+                    cartesian,
+
+                point: {
+
+                    pixelSize: 10,
+
+                    color:
+                        getZoneOutlineColor(
+                            activeZoneSide
+                        ),
+
+                    outlineColor:
+                        Cesium.Color.WHITE,
+
+                    outlineWidth: 2,
+
+                    disableDepthTestDistance:
+                        Number.POSITIVE_INFINITY
+
+                }
+
+            });
+
+
+        currentZoneEntities.push(
+            pointEntity
+        );
+
+
+        updateTemporaryPolygon();
+
+
+        finishZoneBtn.disabled =
+            currentZonePoints.length < 3;
+
+
+        setZoneStatus(
+            `${activeZoneSide} zone: ` +
+            `${currentZonePoints.length} point(s). ` +
+            `Add more points or click Finish Polygon.`
+        );
+
+    }
+
+
+    /* ============================================================
+       TEMPORARY POLYGON
+       ============================================================ */
+
+    function updateTemporaryPolygon() {
+
+        const viewer =
+            window.armouredViewer;
+
+
+        if (!viewer) {
+
+            return;
+
+        }
+
+
+        if (
+            currentZonePoints.length < 3
+        ) {
+
+            return;
+
+        }
+
+
+        const positions =
+            currentZonePoints.map(
+                function(point) {
+
+                    return Cesium.Cartesian3
+                        .fromDegrees(
+                            point[0],
+                            point[1]
+                        );
+
+                }
+            );
+
+
+        if (temporaryPolygonEntity) {
+
+            viewer.entities.remove(
+                temporaryPolygonEntity
+            );
+
+        }
+
+
+        temporaryPolygonEntity =
+            viewer.entities.add({
+
+                polygon: {
+
+                    hierarchy:
+                        new Cesium.PolygonHierarchy(
+                            positions
+                        ),
+
+                    material:
+                        getZoneColor(
+                            activeZoneSide
+                        ),
+
+                    outline: true,
+
+                    outlineColor:
+                        getZoneOutlineColor(
+                            activeZoneSide
+                        ),
+
+                    heightReference:
+                        Cesium.HeightReference
+                            .CLAMP_TO_GROUND
+
+                }
+
+            });
+
+    }
+
+
+    /* ============================================================
+       FINISH ZONE
+       ============================================================ */
+
+    function finishDrawingZone() {
+
+        if (!drawingZone) {
+
+            return;
+
+        }
+
+
+        if (
+            currentZonePoints.length < 3
+        ) {
+
+            setZoneStatus(
+                "A deployment zone needs at least 3 points."
+            );
+
+            return;
+
+        }
+
+
+        drawingZone = false;
+
+        finishZoneBtn.disabled =
+            true;
+
+
+        setZoneStatus(
+            `Saving ${activeZoneSide} deployment zone...`
+        );
+
+
+        saveDeploymentZone(
+            activeZoneSide,
+            currentZonePoints
+        );
+
+    }
+
+
+    /* ============================================================
+       CSRF COOKIE
+       ============================================================ */
+
+    function getCookie(name) {
+
+        const cookies =
+            document.cookie.split(";");
+
+
+        for (
+            const cookie
+            of cookies
+        ) {
+
+            const trimmed =
+                cookie.trim();
+
+
+            if (
+                trimmed.startsWith(
+                    name + "="
+                )
+            ) {
+
+                return decodeURIComponent(
+                    trimmed.substring(
+                        name.length + 1
+                    )
+                );
+
+            }
+
+        }
+
+
+        return null;
+
+    }
+
+
+    /* ============================================================
+       SAVE DEPLOYMENT ZONE
+       ============================================================ */
+
+    async function saveDeploymentZone(
+        side,
+        polygon
+    ) {
+
+        setZoneStatus(
+            `Saving ${side} deployment zone...`
+        );
+
+
+        try {
+
+            const response =
+                await fetch(
+                    `/terrain/battle/${battleId}/zones/save/`,
+                    {
+
+                        method: "POST",
+
+                        headers: {
+
+                            "Content-Type":
+                                "application/json",
+
+                            "X-CSRFToken":
+                                getCookie(
+                                    "csrftoken"
+                                )
+
+                        },
+
+                        mode: "same-origin",
+
+                        body:
+                            JSON.stringify({
+
+                                side: side,
+
+                                polygon: polygon
+
+                            })
+
+                    }
+                );
+
+
+            const data =
+                await response.json();
+
+
+            if (!response.ok) {
+
+                throw new Error(
+                    data.error ||
+                    "Failed to save deployment zone."
+                );
+
+            }
+
+
+            console.log(
+                "Deployment zone saved:",
+                data
+            );
+
+
+            setZoneStatus(
+                `${side} deployment zone saved successfully.`
+            );
+
+
+            currentZonePoints = [];
+
+            currentZoneEntities = [];
+
+
+            if (temporaryPolygonEntity) {
+
+                const viewer =
+                    window.armouredViewer;
+
+                if (viewer) {
+
+                    viewer.entities.remove(
+                        temporaryPolygonEntity
+                    );
+
+                }
+
+            }
+
+
+            temporaryPolygonEntity =
+                null;
+
+
+            activeZoneSide = null;
+
+
+        } catch (error) {
+
+            console.error(
+                "Deployment zone save error:",
+                error
+            );
+
+
+            setZoneStatus(
+                `Error: ${error.message}`
+            );
+
+        }
+
+    }
+
+
+    /* ============================================================
+       LOAD SAVED DEPLOYMENT ZONES
+       ============================================================ */
+
+    async function loadDeploymentZones() {
+
+        const viewer =
+            window.armouredViewer;
+
+
+        if (!viewer) {
+
+            return;
+
+        }
+
+
+        try {
+
+            const response =
+                await fetch(
+                    `/terrain/battle/${battleId}/zones/`
+                );
+
+
+            if (!response.ok) {
+
+                throw new Error(
+                    "Failed to load deployment zones."
+                );
+
+            }
+
+
+            const data =
+                await response.json();
+
+
+            console.log(
+                "Loaded deployment zones:",
+                data
+            );
+
+
+            for (
+                const zone
+                of data.zones
+            ) {
+
+                if (
+                    !zone.polygon ||
+                    zone.polygon.length < 3
+                ) {
+
+                    continue;
+
+                }
+
+
+                drawSavedZone(zone);
+
+            }
+
+
+        } catch (error) {
+
+            console.error(
+                "Deployment zone loading error:",
+                error
+            );
+
+        }
+
+    }
+
+
+    /* ============================================================
+       DRAW SAVED ZONE
+       ============================================================ */
+
+    function drawSavedZone(zone) {
+
+        const viewer =
+            window.armouredViewer;
+
+
+        if (!viewer) {
+
+            return;
+
+        }
+
+
+        const positions =
+            zone.polygon.map(
+                function(point) {
+
+                    return Cesium.Cartesian3
+                        .fromDegrees(
+                            point[0],
+                            point[1]
+                        );
+
+                }
+            );
+
+
+        viewer.entities.add({
+
+            name: zone.name,
+
+            polygon: {
+
+                hierarchy:
+                    new Cesium.PolygonHierarchy(
+                        positions
+                    ),
+
+                material:
+                    getZoneColor(
+                        zone.side
+                    ),
+
+                outline: true,
+
+                outlineColor:
+                    getZoneOutlineColor(
+                        zone.side
+                    ),
+
+                heightReference:
+                    Cesium.HeightReference
+                        .CLAMP_TO_GROUND
+
+            },
+
+            label: {
+
+                text: zone.name,
+
+                font: "14px sans-serif",
+
+                fillColor:
+                    getZoneOutlineColor(
+                        zone.side
+                    ),
+
+                style:
+                    Cesium.LabelStyle
+                        .FILL_AND_OUTLINE,
+
+                outlineWidth: 2,
+
+                verticalOrigin:
+                    Cesium.VerticalOrigin
+                        .CENTER
+
+            }
+
+        });
+
+    }
+
+
+    /* ============================================================
+       GET WORLD POSITION
+       ============================================================ */
+
+    function getWorldPosition(
+        screenPosition
+    ) {
+
+        const viewer =
+            window.armouredViewer;
+
+
+        if (!viewer) {
+
+            return undefined;
+
+        }
+
+
+        let cartesian;
+
+
+        /*
+         * First try 3D tile depth picking.
+         */
+
+        if (
+            viewer.scene.pickPositionSupported
+        ) {
+
+            cartesian =
+                viewer.scene.pickPosition(
+                    screenPosition
+                );
+
+        }
+
+
+        if (
+            Cesium.defined(cartesian)
+        ) {
+
+            return cartesian;
+
+        }
+
+
+        /*
+         * Fallback to WGS84 ellipsoid.
+         */
+
+        cartesian =
+            viewer.camera.pickEllipsoid(
+                screenPosition,
+                Cesium.Ellipsoid.WGS84
+            );
+
+
+        return cartesian;
+
+    }
+
+
+    /* ============================================================
+       DEPLOYMENT ZONE MOUSE HANDLER
+       ============================================================ */
+
+    window.initializeDeploymentZoneEditor =
+        function() {
+
+            const viewer =
+                window.armouredViewer;
+
+
+            if (!viewer) {
+
+                return;
+
+            }
+
+
+            if (
+                deploymentZoneHandler
+            ) {
+
+                deploymentZoneHandler.destroy();
+
+            }
+
+
+            deploymentZoneHandler =
+                new Cesium.ScreenSpaceEventHandler(
+                    viewer.canvas
+                );
+
+
+            deploymentZoneHandler.setInputAction(
+
+                function(movement) {
+
+                    if (!drawingZone) {
+
+                        return;
+
+                    }
+
+
+                    const cartesian =
+                        getWorldPosition(
+                            movement.position
+                        );
+
+
+                    if (
+                        !Cesium.defined(
+                            cartesian
+                        )
+                    ) {
+
+                        setZoneStatus(
+                            "Could not determine the 3D position."
+                        );
+
+                        return;
+
+                    }
+
+
+                    addZonePoint(
+                        cartesian
+                    );
+
+                },
+
+                Cesium.ScreenSpaceEventType
+                    .LEFT_CLICK
+
+            );
+
+
+            console.log(
+                "Deployment zone mouse handler ready."
+            );
+
+
+            loadDeploymentZones();
+
+        };
+
+
+    /* ============================================================
+       ZONE BUTTON EVENTS
+       ============================================================ */
+
+    drawBlueZoneBtn.addEventListener(
+        "click",
+        function() {
+
+            startDrawingZone(
+                "BLUE"
+            );
+
+        }
+    );
+
+
+    drawRedZoneBtn.addEventListener(
+        "click",
+        function() {
+
+            startDrawingZone(
+                "RED"
+            );
+
+        }
+    );
+
+
+    finishZoneBtn.addEventListener(
+        "click",
+        function() {
+
+            finishDrawingZone();
+
+        }
+    );
+
+
+    clearZoneBtn.addEventListener(
+        "click",
+        function() {
+
+            currentZonePoints = [];
+
+            clearCurrentZoneEntities();
+
+            drawingZone = false;
+
+            activeZoneSide = null;
+
+            finishZoneBtn.disabled =
+                true;
+
+            setZoneStatus(
+                "Current unsaved polygon cleared."
+            );
+
+        }
+    );
+
+
+</script>
+
+
+<script>
+
+    /* ============================================================
+       BATTLE UNIT DISPLAY
+       ============================================================ */
+
+    const unitEntities =
+        new Map();
+
+
+    /* ============================================================
+       UNIT COLORS
+       ============================================================ */
+
+    function getUnitColor(side) {
+
+        if (side === "BLUE") {
+
+            return Cesium.Color.CYAN;
+
+        }
+
+        return Cesium.Color.RED;
+
+    }
+
+
+    /* ============================================================
+       BUILD UNIT DESCRIPTION
+       ============================================================ */
+
+    function buildUnitDescription(unit) {
+
+        return `
+            <table class="unit-info-table">
+
+                <tr>
+                    <th>Unit</th>
+                    <td>${unit.name}</td>
+                </tr>
+
+                <tr>
+                    <th>Side</th>
+                    <td
+                        class="${
+                            unit.side === "BLUE"
+                                ? "side-blue"
+                                : "side-red"
+                        }"
+                    >
+                        ${unit.side}
+                    </td>
+                </tr>
+
+                <tr>
+                    <th>Formation</th>
+                    <td>${unit.formation}</td>
+                </tr>
+
+                <tr>
+                    <th>Platform</th>
+                    <td>${unit.platform}</td>
+                </tr>
+
+                <tr>
+                    <th>Health</th>
+                    <td>${unit.health}</td>
+                </tr>
+
+                <tr>
+                    <th>Morale</th>
+                    <td>${unit.morale}</td>
+                </tr>
+
+                <tr>
+                    <th>Fuel</th>
+                    <td>${unit.fuel}</td>
+                </tr>
+
+                <tr>
+                    <th>Moving</th>
+                    <td>${unit.moving}</td>
+                </tr>
+
+                <tr>
+                    <th>Immobilised</th>
+                    <td>${unit.immobilised}</td>
+                </tr>
+
+                <tr>
+                    <th>Detected</th>
+                    <td>${unit.is_detected}</td>
+                </tr>
+
+                <tr>
+                    <th>Latitude</th>
+                    <td>
+                        ${Number(unit.latitude).toFixed(6)}
+                    </td>
+                </tr>
+
+                <tr>
+                    <th>Longitude</th>
+                    <td>
+                        ${Number(unit.longitude).toFixed(6)}
+                    </td>
+                </tr>
+
+                <tr>
+                    <th>Altitude</th>
+                    <td>
+                        ${Number(unit.altitude || 0).toFixed(1)} m
+                    </td>
+                </tr>
+
+                <tr>
+                    <th>Heading</th>
+                    <td>
+                        ${Number(unit.heading || 0).toFixed(1)}°
+                    </td>
+                </tr>
+
+                <tr>
+                    <th>Speed</th>
+                    <td>
+                        ${Number(unit.speed || 0).toFixed(2)} m/s
+                    </td>
+                </tr>
+
+                <tr>
+                    <th>HVT</th>
+                    <td>${unit.is_hvt}</td>
+                </tr>
+
+            </table>
+        `;
+
+    }
+
+
+    /* ============================================================
+       SHOW UNIT INFO PANEL
+       ============================================================ */
+
+    function showUnitInfo(unit) {
+
+        const panel =
+            document.getElementById(
+                "unitInfoPanel"
+            );
+
+
+        const content =
+            document.getElementById(
+                "unitInfoContent"
+            );
+
+
+        if (!panel || !content) {
+
+            return;
+
+        }
+
+
+        content.innerHTML =
+            buildUnitDescription(
+                unit
+            );
+
+
+        panel.classList.add(
+            "visible"
+        );
+
+    }
+
+
+    /* ============================================================
+       CREATE UNIT ENTITY
+       ============================================================ */
+
+    function createUnitEntity(unit) {
+
+        const viewer =
+            window.armouredViewer;
+
+
+        if (!viewer) {
+
+            return null;
+
+        }
+
+
+        if (
+            typeof unit.longitude !== "number" ||
+            typeof unit.latitude !== "number"
+        ) {
+
+            console.warn(
+                "Unit has invalid coordinates:",
+                unit
+            );
+
+            return null;
+
+        }
+
+
+        const color =
+            getUnitColor(
+                unit.side
+            );
+
+
+        const entity =
+            viewer.entities.add({
+
+                id:
+                    `battle-unit-${unit.id}`,
+
+                name:
+                    unit.name,
+
+                position:
+                    Cesium.Cartesian3.fromDegrees(
+
+                        unit.longitude,
+
+                        unit.latitude,
+
+                        Number(
+                            unit.altitude || 0
+                        )
+
+                    ),
+
+
+                point: {
+
+                    pixelSize:
+                        unit.is_hvt
+                            ? 18
+                            : 12,
+
+                    color:
+                        color,
+
+                    outlineColor:
+                        Cesium.Color.WHITE,
+
+                    outlineWidth: 2,
+
+                    disableDepthTestDistance:
+                        Number.POSITIVE_INFINITY
+
+                },
+
+
+                label: {
+
+                    text:
+                        `${unit.name} | ${unit.platform}` +
+                        (
+                            unit.is_hvt
+                                ? " | HVT"
+                                : ""
+                        ),
+
+                    font:
+                        unit.is_hvt
+                            ? "bold 14px sans-serif"
+                            : "12px sans-serif",
+
+                    fillColor:
+                        color,
+
+                    outlineColor:
+                        Cesium.Color.BLACK,
+
+                    outlineWidth: 3,
+
+                    style:
+                        Cesium.LabelStyle
+                            .FILL_AND_OUTLINE,
+
+                    verticalOrigin:
+                        Cesium.VerticalOrigin
+                            .BOTTOM,
+
+                    pixelOffset:
+                        new Cesium.Cartesian2(
+                            0,
+                            -14
+                        ),
+
+                    disableDepthTestDistance:
+                        Number.POSITIVE_INFINITY
+
+                },
+
+
+                description:
+                    buildUnitDescription(
+                        unit
+                    )
+
+            });
+
+
+        unitEntities.set(
+            unit.id,
+            entity
+        );
+
+
+        return entity;
+
+    }
+
+
+    /* ============================================================
+       UPDATE EXISTING UNIT ENTITY
+       ============================================================ */
+
+    function updateUnitEntity(unit) {
+
+        const entity =
+            unitEntities.get(
+                unit.id
+            );
+
+
+        /*
+         * Unit did not exist before.
+         */
+
+        if (!entity) {
+
+            createUnitEntity(
+                unit
+            );
+
+            return;
+
+        }
+
+
+        /*
+         * Update position.
+         *
+         * This is the important part:
+         * the existing Cesium entity is moved
+         * instead of being destroyed/recreated.
+         */
+
+        entity.position =
+            Cesium.Cartesian3.fromDegrees(
+
+                unit.longitude,
+
+                unit.latitude,
+
+                Number(
+                    unit.altitude || 0
+                )
+
+            );
+
+
+        /*
+         * Update description.
+         */
+
+        entity.description =
+            buildUnitDescription(
+                unit
+            );
+
+
+        /*
+         * Update point appearance.
+         */
+
+        if (entity.point) {
+
+            entity.point.pixelSize =
+                unit.is_hvt
+                    ? 18
+                    : 12;
+
+            entity.point.color =
+                getUnitColor(
+                    unit.side
+                );
+
+        }
+
+
+        /*
+         * Update label.
+         */
+
+        if (entity.label) {
+
+            entity.label.text =
+                `${unit.name} | ${unit.platform}` +
+                (
+                    unit.is_hvt
+                        ? " | HVT"
+                        : ""
+                );
+
+            entity.label.fillColor =
+                getUnitColor(
+                    unit.side
+                );
+
+        }
+
+    }
+
+
+    /* ============================================================
+       LOAD / REFRESH BATTLE UNITS
+       ============================================================ */
+
+    window.loadBattleUnits =
+        async function() {
+
+            const viewer =
+                window.armouredViewer;
+
+
+            if (!viewer) {
+
+                console.warn(
+                    "Cesium viewer is not ready."
+                );
+
+                return;
+
+            }
+
+
+            try {
+
+                const response =
+                    await fetch(
+                        `/units/battle/${battleId}/`
+                    );
+
+
+                if (!response.ok) {
+
+                    throw new Error(
+                        `Unit API returned HTTP ${response.status}`
+                    );
+
+                }
+
+
+                const data =
+                    await response.json();
+
+
+                /*
+                 * Update existing entities.
+                 */
+
+                for (
+                    const unit
+                    of data.units
+                ) {
+
+                    updateUnitEntity(
+                        unit
+                    );
+
+                }
+
+
+                /*
+                 * Remove entities that
+                 * no longer exist.
+                 */
+
+                const activeUnitIds =
+                    new Set(
+                        data.units.map(
+                            unit => unit.id
+                        )
+                    );
+
+
+                for (
+                    const [
+                        unitId,
+                        entity
+                    ]
+                    of unitEntities.entries()
+                ) {
+
+                    if (
+                        !activeUnitIds.has(
+                            unitId
+                        )
+                    ) {
+
+                        viewer.entities.remove(
+                            entity
+                        );
+
+                        unitEntities.delete(
+                            unitId
+                        );
+
+                    }
+
+                }
+
+
+                console.log(
+                    `Updated ${data.units.length} battle units.`
+                );
+
+
+            } catch (error) {
+
+                console.error(
+                    "Failed to load battle units:",
+                    error
+                );
+
+            }
+
+        };
+
+
+</script>
+
+
+<script>
+
+    /* ============================================================
+       UNIT CLICK HANDLER
+       ============================================================ */
+
+    let unitClickHandler = null;
+
+
+    function initializeUnitClickHandler() {
+
+        const viewer =
+            window.armouredViewer;
+
+
+        if (!viewer) {
+
+            return;
+
+        }
+
+
+        if (unitClickHandler) {
+
+            unitClickHandler.destroy();
+
+        }
+
+
+        unitClickHandler =
+            new Cesium.ScreenSpaceEventHandler(
+                viewer.canvas
+            );
+
+
+        unitClickHandler.setInputAction(
+
+            function(click) {
+
+                /*
+                 * Do not interfere with zone drawing.
+                 */
+
+                if (drawingZone) {
+
+                    return;
+
+                }
+
+
+                const picked =
+                    viewer.scene.pick(
+                        click.position
+                    );
+
+
+                if (
+                    !Cesium.defined(
+                        picked
+                    )
+                ) {
+
+                    return;
+
+                }
+
+
+                const entity =
+                    picked.id;
+
+
+                if (!entity) {
+
+                    return;
+
+                }
+
+
+                const entityId =
+                    entity.id;
+
+
+                if (
+                    typeof entityId !== "string"
+                ) {
+
+                    return;
+
+                }
+
+
+                if (
+                    !entityId.startsWith(
+                        "battle-unit-"
+                    )
+                ) {
+
+                    return;
+
+                }
+
+
+                const unitId =
+                    Number(
+                        entityId.replace(
+                            "battle-unit-",
+                            ""
+                        )
+                    );
+
+
+                const unitEntity =
+                    unitEntities.get(
+                        unitId
+                    );
+
+
+                if (!unitEntity) {
+
+                    return;
+
+                }
+
+
+                /*
+                 * Fetch current unit data
+                 * so the information panel
+                 * always has fresh values.
+                 */
+
+                fetch(
+                    `/units/battle/${battleId}/`
+                )
+                    .then(
+                        response =>
+                            response.json()
+                    )
+                    .then(
+                        data => {
+
+                            const unit =
+                                data.units.find(
+                                    item =>
+                                        item.id ===
+                                        unitId
+                                );
+
+
+                            if (unit) {
+
+                                showUnitInfo(
+                                    unit
+                                );
+
+                            }
+
+                        }
+                    )
+                    .catch(
+                        error =>
+                            console.error(
+                                "Unit information error:",
+                                error
+                            )
+                    );
+
+            },
+
+            Cesium.ScreenSpaceEventType
+                .LEFT_CLICK
+
+        );
+
+
+        console.log(
+            "Unit click handler ready."
+        );
+
+    }
+
+
+</script>
+
+
+<script>
+
+    /* ============================================================
+       SIMULATION CONTROL
+       ============================================================ */
+
+    let simulationTimer =
+        null;
+
+    let simulationRunning =
+        false;
+
+    let simulationTickInProgress =
+        false;
+
+
+    const runSimulationBtn =
+        document.getElementById(
+            "runSimulationBtn"
+        );
+
+
+    const stopSimulationBtn =
+        document.getElementById(
+            "stopSimulationBtn"
+        );
+
+
+    const simulationLiveStatus =
+        document.getElementById(
+            "simulationLiveStatus"
+        );
+
+
+    const simulationTick =
+        document.getElementById(
+            "simulationTick"
+        );
+
+
+    const simulationUnitsProcessed =
+        document.getElementById(
+            "simulationUnitsProcessed"
+        );
+
+
+    const simulationMovementsCompleted =
+        document.getElementById(
+            "simulationMovementsCompleted"
+        );
+
+
+    /* ============================================================
+       UPDATE SIMULATION STATUS UI
+       ============================================================ */
+
+    function updateSimulationStatus(
+        running
+    ) {
+
+        if (!simulationLiveStatus) {
+
+            return;
+
+        }
+
+
+        if (running) {
+
+            simulationLiveStatus.textContent =
+                "RUNNING";
+
+            simulationLiveStatus.classList
+                .remove(
+                    "stopped"
+                );
+
+            simulationLiveStatus.classList
+                .add(
+                    "running"
+                );
+
+        } else {
+
+            simulationLiveStatus.textContent =
+                "STOPPED";
+
+            simulationLiveStatus.classList
+                .remove(
+                    "running"
+                );
+
+            simulationLiveStatus.classList
+                .add(
+                    "stopped"
+                );
+
+        }
+
+    }
+
+
+    /* ============================================================
+       EXECUTE ONE SIMULATION TICK
+       ============================================================ */
+
+    async function executeSimulationTick() {
+
+        /*
+         * Prevent two tick requests from
+         * running at the same time.
+         */
+
+        if (simulationTickInProgress) {
+
+            return;
+
+        }
+
+
+        simulationTickInProgress =
+            true;
+
+
+        try {
+
+            const response =
+                await fetch(
+                    `/simulation/battle/${battleId}/tick/`,
+                    {
+
+                        method: "POST",
+
+                        headers: {
+
+                            "X-CSRFToken":
+                                getCookie(
+                                    "csrftoken"
+                                )
+
+                        },
+
+                        mode: "same-origin"
+
+                    }
+                );
+
+
+            if (!response.ok) {
+
+                throw new Error(
+                    `Tick API returned HTTP ${response.status}`
+                );
+
+            }
+
+
+            const data =
+                await response.json();
+
+
+            console.log(
+                "SIMULATION TICK:",
+                data
+            );
+
+
+            if (!data.success) {
+
+                throw new Error(
+                    data.error ||
+                    "Simulation tick failed."
+                );
+
+            }
+
+
+            /*
+             * Update simulation status panel.
+             */
+
+            if (
+                data.tick &&
+                typeof
+                data.tick.tick_number
+                !== "undefined"
+            ) {
+
+                simulationTick.textContent =
+                    data.tick.tick_number;
+
+            }
+
+
+            if (
+                data.tick &&
+                typeof
+                data.tick.units_processed
+                !== "undefined"
+            ) {
+
+                simulationUnitsProcessed
+                    .textContent =
+                    data.tick.units_processed;
+
+            }
+
+
+            if (
+                data.tick &&
+                typeof
+                data.tick
+                    .movements_completed
+                !== "undefined"
+            ) {
+
+                simulationMovementsCompleted
+                    .textContent =
+                    data.tick
+                        .movements_completed;
+
+            }
+
+
+            /*
+             * Refresh Cesium unit positions.
+             */
+
+            await window.loadBattleUnits();
+
+
+            /*
+             * Backend may stop the simulation
+             * in the future when battle ends.
+             */
+
+            if (
+                data.simulation_status &&
+                data.simulation_status !==
+                    "RUNNING"
+            ) {
+
+                stopSimulation();
+
+            }
+
+
+        } catch (error) {
+
+            console.error(
+                "Simulation tick error:",
+                error
+            );
+
+
+            setZoneStatus(
+                `Simulation error: ${error.message}`
+            );
+
+
+            stopSimulation();
+
+        } finally {
+
+            simulationTickInProgress =
+                false;
+
+        }
+
+    }
+
+
+    /* ============================================================
+       SCHEDULE NEXT TICK
+       ============================================================ */
+
+    function scheduleNextSimulationTick() {
+
+        if (!simulationRunning) {
+
+            return;
+
+        }
+
+
+        simulationTimer =
+            setTimeout(
+                async function() {
+
+                    if (
+                        !simulationRunning
+                    ) {
+
+                        return;
+
+                    }
+
+
+                    await
+                    executeSimulationTick();
+
+
+                    scheduleNextSimulationTick();
+
+                },
+
+                1000
+
+            );
+
+    }
+
+
+    /* ============================================================
+       START SIMULATION
+       ============================================================ */
+
+    async function startSimulation() {
+
+        if (simulationRunning) {
+
+            console.log(
+                "Simulation is already running."
+            );
+
+            return;
+
+        }
+
+
+        simulationRunning =
+            true;
+
+
+        updateSimulationStatus(
+            true
+        );
+
+
+        runSimulationBtn.disabled =
+            true;
+
+
+        stopSimulationBtn.disabled =
+            false;
+
+
+        setZoneStatus(
+            "Simulation running..."
+        );
+
+
+        console.log(
+            "Live simulation started."
+        );
+
+
+        /*
+         * Execute first tick immediately.
+         */
+
+        await
+        executeSimulationTick();
+
+
+        /*
+         * Continue every 1 second.
+         */
+
+        scheduleNextSimulationTick();
+
+    }
+
+
+    /* ============================================================
+       STOP SIMULATION LOOP
+       ============================================================ */
+
+    function stopSimulation() {
+
+        simulationRunning =
+            false;
+
+
+        if (
+            simulationTimer !== null
+        ) {
+
+            clearTimeout(
+                simulationTimer
+            );
+
+            simulationTimer =
+                null;
+
+        }
+
+
+        updateSimulationStatus(
+            false
+        );
+
+
+        runSimulationBtn.disabled =
+            false;
+
+
+        stopSimulationBtn.disabled =
+            false;
+
+
+        console.log(
+            "Simulation browser loop stopped."
+        );
+
+
+        setZoneStatus(
+            "Simulation stopped."
+        );
+
+    }
+
+
+    /* ============================================================
+       SIMULATION BUTTON EVENTS
+       ============================================================ */
+
+    runSimulationBtn.addEventListener(
+        "click",
+        function() {
+
+            startSimulation();
+
+        }
+    );
+
+
+    stopSimulationBtn.addEventListener(
+        "click",
+        function() {
+
+            stopSimulation();
+
+        }
+    );
+
+
+</script>
+
+
+<script>
+
+    /* ============================================================
+       FINAL INITIALIZATION
+       ============================================================ */
+
+    async function initializeBattleDashboard() {
+
+        /*
+         * Start Cesium.
+         *
+         * initCesium() itself will initialize:
+         * - deployment zones
+         * - units
+         */
+
+        await initCesium();
+
+
+        /*
+         * Initialize unit click handling
+         * after the Cesium viewer exists.
+         */
+
+        if (
+            window.armouredViewer
+        ) {
+
+            initializeUnitClickHandler();
+
+        }
+
+    }
+
+
+    initializeBattleDashboard();
+
+</script>
+
 {% endblock %}

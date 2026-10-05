@@ -19,4 +19,8 @@ urlpatterns = [
     
 ),
     path("scenarios/", include("scenarios.urls")),
+    path("terrain/", include("terrain.urls")),
+    path("units/", include("units.urls")),
+    path("simulation/", include("simulation.urls")),
+    path("objectives/", include("objectives.urls")),
 ]

@@ -33,6 +33,21 @@ class Battle(models.Model):
 
     name = models.CharField(max_length=200)
     description = models.TextField(blank=True)
+    duration_seconds = models.PositiveIntegerField(
+        default=3600,
+        help_text="Maximum battle duration in seconds.",
+    )
+
+    tick_interval_ms = models.PositiveIntegerField(
+        default=1000,
+        help_text="Simulation tick interval in milliseconds.",
+    )
+
+    random_seed = models.PositiveBigIntegerField(
+        null=True,
+        blank=True,
+        help_text="Seed used for deterministic simulation behaviour.",
+    )
 
     status = models.CharField(
         max_length=30,
@@ -112,6 +127,7 @@ class BattleOrbat(models.Model):
         on_delete=models.CASCADE,
         related_name="battle_orbats",
     )
+
     battle = models.OneToOneField(
         Battle,
         on_delete=models.CASCADE,
